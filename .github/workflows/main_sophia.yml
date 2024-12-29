@@ -1,7 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python app to Azure Web App - sophia
 
 on:
@@ -15,64 +11,76 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Étape 1 : Récupérer le code source depuis GitHub
       - uses: actions/checkout@v4
 
+      # Étape 2 : Configurer la version de Python
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
+      # Étape 3 : Créer un environnement virtuel et installer les dépendances
       - name: Create and start virtual environment
         run: |
           python -m venv venv
           source venv/bin/activate
-      
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+        run: |
+          pip install -r requirements.txt
 
+      # Étape 4 (optionnel) : Ajouter une étape pour exécuter les tests (par exemple, avec Pytest)
+      # - name: Run tests
+      #   run: |
+      #     source venv/bin/activate
+      #     pytest
+
+      # Étape 5 : Créer un fichier zip des fichiers nécessaires pour le déploiement
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: |
+          zip -r release.zip . \
+          -x "venv/*" "*.git*" "*.github*" "__pycache__/*"
 
+      # Étape 6 : Télécharger l'artefact pour le job de déploiement
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            release.zip
-            !venv/
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
+      id-token: write # Requis pour demander un JWT
 
     steps:
+      # Étape 1 : Télécharger l'artefact depuis le job de build
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: python-app
 
+      # Étape 2 : Décompresser l'artefact
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      
+      # Étape 3 : Connexion à Azure
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8110FC88AFBB4FF49195B3A8B05F15AB }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AE0D8E2E5BE54EF69F29E956A0F2C923 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_58998A1304774753A23BDEE7352C1A49 }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # Étape 4 : Déployer sur Azure Web App
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: 'sophia'
           slot-name: 'Production'
-          
+
