@@ -49,37 +49,22 @@ jobs:
           name: python-app
           path: api/release.zip
 
-  deploy:
+deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-    permissions:
-      id-token: write # Requis pour demander un JWT
 
     steps:
-      # Étape 1 : Télécharger l'artefact depuis le job de build
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: python-app
 
-      # Étape 2 : Décompresser l'artefact
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # Étape 3 : Connexion à Azure
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      # Étape 4 : Déployer sur Azure Web App
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
-          app-name: 'sophia'
-          slot-name: 'Production'
+          app-name: 'sophia' # Remplacez par le nom de votre application Azure Web App
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: release.zip
