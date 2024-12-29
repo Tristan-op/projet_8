@@ -77,3 +77,21 @@ Exemple de réponse :
     HTTP/1.1 200 OK
     Content-Type: image/jpeg
 
+### **5. Visualiser une image avec son masque prédit**
+- **Endpoint** : `/visualize`
+- **Méthode** : `GET`
+- **Description** : Permet de visualiser une image réelle et son masque prédit généré par le modèle. L'image retournée est une combinaison des deux, prête à être visualisée au format JPEG.
+
+#### **Paramètres** :
+- `city` : Ville dans laquelle se trouve l'image (exemple : `city1`).
+- `image_name` : Nom de l'image à traiter (exemple : `image1_leftImg8bit.png`).
+
+#### **Exemple de requête avec `curl`** :
+  
+    curl -X GET "https://sophia.azure.net/visualize?city=city1&image_name=image1_leftImg8bit.png"
+
+Exemple de réponse :
+```bash
+    HTTP/1.1 200 OK
+    Content-Type: image/jpeg
+
