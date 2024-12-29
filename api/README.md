@@ -55,3 +55,24 @@ L'API déployée est disponible à l'adresse suivante : **[https://sophia.azure.
 #### Exemple de requête :
 ```arduino
 GET https://sophia.azure.net/observe?city=city1&image_name=image1_leftImg8bit.png
+
+Exemple de réponse :
+L'API retourne les images directement en tant que contenu JPEG avec un type MIME approprié (image/jpeg).
+
+### **4. Prédire un masque**
+- **Endpoint** : `/predict`
+- **Méthode** : `POST`
+- **Description** : Traite une image envoyée pour générer un masque prédit au format JPEG.
+
+#### **Paramètres** :
+- Une image envoyée au format `multipart/form-data`.
+
+#### **Exemple de requête avec `curl`** :
+  ```bash
+  curl -X POST "https://sophia.azure.net/predict" -F "file=@path_to_image.jpg"
+
+Exemple de réponse :
+   ```bash
+  HTTP/1.1 200 OK
+  Content-Type: image/jpeg
+
