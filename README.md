@@ -36,12 +36,11 @@ Les fonctionnalités de l'application Streamlit incluent :
    cd api
    
 2. Installez les dépendances :
-
- ```bash   
-pip install -r requirements.txt
+    ```bash   
+    pip install -r requirements.txt
 3. Lancez l'API :
-```bash 
-uvicorn main:app --reload
+   ```bash 
+   uvicorn main:app --reload
 
 L'API sera accessible localement sur : http://127.0.0.1:8000
 
