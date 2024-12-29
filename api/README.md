@@ -69,7 +69,7 @@ L'API retourne les images directement en tant que contenu JPEG avec un type MIME
 
 #### **Exemple de requête avec `curl`** :
     
-    curl -X POST "https://sophia.azure.net/predict" -F "file=@path_to_image.jpg"
+      curl -X POST "https://sophia.azure.net/predict" -F "file=@path_to_image.jpg"
 
     Exemple de réponse :
     ```bash
