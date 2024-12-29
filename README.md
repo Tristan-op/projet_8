@@ -34,7 +34,7 @@ Les fonctionnalités de l'application Streamlit incluent :
 1. Naviguez dans le dossier `api` :
    ```bash
    cd api
-   ```bash
+   bash```
 2. Installez les dépendances :
   ```bash
   pip install -r requirements.txt
