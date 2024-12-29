@@ -140,7 +140,7 @@ def display_upload_and_predict():
     
     if uploaded_file:
         image = Image.open(uploaded_file).convert("RGB")
-        st.image(image, caption="Image Uploadée", use_column_width=True)
+        st.image(image, caption="Image Uploadée", use_container_width=True)
 
         if model_loaded:
             st.write("**Analyse de l'image**")
@@ -159,7 +159,7 @@ def display_upload_and_predict():
                 # Application de la palette
                 predicted_mask_colored = apply_palette(predicted_mask, PALETTE)
 
-                st.image(predicted_mask_colored, caption="Masque Prédit", use_column_width=True)
+                st.image(predicted_mask_colored, caption="Masque Prédit", use_container_width=True)
         else:
             st.error("Le modèle n'a pas été chargé correctement.")
 
@@ -191,9 +191,9 @@ def display_data_analysis():
             st.write("Image originale et masque correspondant :")
             col1, col2 = st.columns(2)
             with col1:
-                st.image(image, caption="Image Originale", use_column_width=True)
+                st.image(image, caption="Image Originale", use_container_width=True)
             with col2:
-                st.image(original_mask, caption="Masque Original (Niveaux de gris)", use_column_width=True)
+                st.image(original_mask, caption="Masque Original (Niveaux de gris)", use_container_width=True)
 
             # Analyse avec le modèle
             if model_loaded:
@@ -220,7 +220,7 @@ def display_data_analysis():
                     # Affichage du masque traité et de sa légende
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.image(predicted_mask_colored, caption="Masque Traité", use_column_width=True)
+                        st.image(predicted_mask_colored, caption="Masque Traité", use_container_width=True)
 
                     with col2:
                         st.write("**Légende des classes avec couleurs**")
