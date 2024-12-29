@@ -73,9 +73,9 @@ L'API retourne les images directement en tant que contenu JPEG avec un type MIME
 
 
   Exemple de réponse :
-    ```bash
-      HTTP/1.1 200 OK
-      Content-Type: image/jpeg
+      ```bash
+        HTTP/1.1 200 OK
+        Content-Type: image/jpeg
 
 ### **5. Visualiser une image avec son masque prédit**
 - **Endpoint** : `/visualize`
