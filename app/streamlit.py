@@ -30,7 +30,7 @@ def page_home():
         - Liste des images disponibles.
         - Upload et analyse de vos propres images.
     """)
-    st.image("https://via.placeholder.com/800x400.png?text=SOPHIA+App+Overview", use_column_width=True)
+    st.image("https://via.placeholder.com/800x400.png?text=SOPHIA+App+Overview", use_container_width=True)
 
 def page_list_images():
     st.title("Liste des images disponibles")
@@ -68,8 +68,8 @@ def page_list_images():
                     mask = decode_base64_image(result["annotated_mask"])
 
                     # Afficher les images empilées
-                    st.image(image, caption="Image originale", use_column_width=True)
-                    st.image(mask, caption="Masque annoté", use_column_width=True)
+                    st.image(image, caption="Image originale", use_container_width=True)
+                    st.image(mask, caption="Masque annoté", use_container_width=True)
 
                     # Bouton pour analyser l'image
                     if st.button("Analyser cette image"):
@@ -88,7 +88,7 @@ def page_list_images():
                                 )
 
                                 # Afficher le masque prédit
-                                st.image(predicted_mask_resized, caption="Masque prédit (réduit à 25%)", use_column_width=True)
+                                st.image(predicted_mask_resized, caption="Masque prédit (réduit à 25%)", use_container_width=True)
 
                                 # Afficher la légende des classes
                                 st.write("### Légende des classes :")
@@ -135,7 +135,7 @@ def page_upload():
     if uploaded_file is not None:
         # Aperçu de l'image uploadée
         image = Image.open(uploaded_file)
-        st.image(image, caption="Image uploadée", use_column_width=True)
+        st.image(image, caption="Image uploadée", use_container_width=True)
         
         # Bouton pour analyser l'image
         if st.button("Analyser l'image"):
@@ -152,8 +152,8 @@ def page_upload():
                     processed_mask = decode_base64_image(result["processed_mask"])
                     
                     # Affichage des résultats
-                    st.image(original_image, caption="Image originale", use_column_width=True)
-                    st.image(processed_mask, caption="Masque prédit", use_column_width=True)
+                    st.image(original_image, caption="Image originale", use_container_width=True)
+                    st.image(processed_mask, caption="Masque prédit", use_container_width=True)
                 else:
                     st.error(f"Erreur lors de l'analyse de l'image : {response.status_code}")
 
