@@ -49,7 +49,7 @@ jobs:
           name: python-app
           path: api/release.zip
 
-deploy:
+  deploy:
     runs-on: ubuntu-latest
     needs: build
 
