@@ -45,4 +45,16 @@ Les fonctionnalités de l'application Streamlit incluent :
 L'API sera accessible localement sur : http://127.0.0.1:8000
 
 
-   
+### **Étape 2 : Application Streamlit**
+1. **Naviguez dans le dossier `app`** :   
+   ```bash
+   cd app
+
+2. Installez les dépendances :
+    ```bash   
+    pip install -r requirements.txt
+3. Lancez l'application :
+   ```bash 
+   streamlit run app.py
+
+L'application sera accessible sur : http://localhost:8501
