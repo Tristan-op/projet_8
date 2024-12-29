@@ -53,7 +53,7 @@ L'API déployée est disponible à l'adresse suivante : **[https://sophia.azure.
 - `image_name` : Nom de l'image (exemple : `image1_leftImg8bit.png`).
 
 #### Exemple de requête :
-    ```arduino
+   
     https://sophia.azure.net/observe?city=city1&image_name=image1_leftImg8bit.png
 
 Exemple de réponse :
