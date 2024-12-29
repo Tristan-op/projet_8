@@ -1,0 +1,70 @@
+name: Build and deploy Python app to Azure Web App - sophia
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Récupérer le code source depuis GitHub
+      - uses: actions/checkout@v4
+
+      # Étape 2 : Configurer la version de Python
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Étape 3 : Créer un environnement virtuel et installer les dépendances
+      - name: Install dependencies
+        run: |
+          cd api
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      # Étape 4 (optionnel) : Ajouter une étape pour exécuter les tests
+      # - name: Run tests
+      #   run: |
+      #     cd api
+      #     source venv/bin/activate
+      #     pytest
+
+      # Étape 5 : Créer un fichier zip des fichiers nécessaires pour le déploiement
+      - name: Zip artifact for deployment
+        run: |
+          cd api
+          zip -r release.zip . \
+          -x "venv/*" "*.git*" "*.github*" "__pycache__/*"
+
+      # Étape 6 : Télécharger l'artefact pour le job de déploiement
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: api/release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
+
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'sophia' # Remplacez par le nom de votre application Azure Web App
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: release.zip

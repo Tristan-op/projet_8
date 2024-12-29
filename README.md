@@ -55,7 +55,7 @@ L'API sera accessible localement sur : http://127.0.0.1:8000
     pip install -r requirements.txt
 3. Lancez l'application :
    ```bash 
-   streamlit run app.py
+   streamlit run streamlit.py
 
 L'application sera accessible sur : http://localhost:8501
 
