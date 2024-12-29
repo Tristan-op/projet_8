@@ -71,10 +71,10 @@ L'API retourne les images directement en tant que contenu JPEG avec un type MIME
     
     curl -X POST "https://sophia.azure.net/predict" -F "file=@path_to_image.jpg"
 
-  Exemple de réponse :
-  ```bash
-      HTTP/1.1 200 OK
-      Content-Type: image/jpeg
+    Exemple de réponse :
+    ```bash
+        HTTP/1.1 200 OK
+        Content-Type: image/jpeg
 
 ### **5. Visualiser une image avec son masque prédit**
 - **Endpoint** : `/visualize`
