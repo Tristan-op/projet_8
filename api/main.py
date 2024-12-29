@@ -330,25 +330,39 @@ async def view(
 
 
 
-@app.get("/predict", response_class=HTMLResponse)
-async def predict(city: str = Query(...), image_name: str = Query(...), accept: str = Query("html")):
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
     """
-    Traite une image existante et retourne les résultats en HTML ou JSON.
+    Traite une image uploadée et retourne le masque prédit en JSON.
     """
-    # Traitement identique mais retour différencié JSON/HTML
-    if accept == "html":
-        # Retourner en HTML
-        return HTMLResponse(content=f"""
-            <html>
-                <body>
-                    <h1>Prédiction</h1>
-                    <p>Image traitée : {image_name}</p>
-                </body>
-            </html>
-        """)
-    else:
-        # Retourner en JSON
-        return JSONResponse(content={"status": "success", "image_name": image_name})
+    try:
+        # Charger l'image uploadée
+        img = Image.open(file.file).convert("RGB")
+
+        # Préparer l'image pour la prédiction
+        img_resized = ImageOps.fit(img, (256, 256), Image.Resampling.LANCZOS)
+        img_array = np.array(img_resized) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # Prédiction
+        prediction = model.predict(img_array)[0]
+        predicted_mask = np.argmax(prediction, axis=-1)
+
+        # Générer le masque traité coloré
+        predicted_mask_colored = Image.fromarray(apply_palette(predicted_mask, PALETTE))
+
+        # Encodage des images en base64
+        original_image_base64 = encode_image_to_base64(img)
+        processed_mask_base64 = encode_image_to_base64(predicted_mask_colored)
+
+        # Retourner les données en JSON
+        return JSONResponse(content={
+            "original_image": original_image_base64,
+            "processed_mask": processed_mask_base64
+        })
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction : {str(e)}")
 
 
 # =========================================

@@ -3,6 +3,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 import base64
+import numpy as np
 
 # Configuration de l'application Streamlit
 st.set_page_config(
@@ -12,7 +13,7 @@ st.set_page_config(
 )
 
 # Base URL de l'API (modifiez pour correspondre à votre déploiement cloud si nécessaire)
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "https://sophia-dkasd9g9dcfnaqb2.francecentral-01.azurewebsites.net/"
 
 
 # Fonction utilitaire pour décoder une image Base64
@@ -139,21 +140,24 @@ def page_upload():
         # Bouton pour analyser l'image
         if st.button("Analyser l'image"):
             with st.spinner("Analyse en cours..."):
-                files = {"file": uploaded_file}
-                response = requests.post(f"{BASE_URL}/predict-upload", files=files)
+                # Envoi de l'image à l'API via POST
+                files = {"file": uploaded_file.getvalue()}  # Obtenir le contenu brut
+                response = requests.post(f"{BASE_URL}/predict", files=files)
                 
                 if response.status_code == 200:
                     result = response.json()
+                    
+                    # Décodage des résultats
+                    original_image = decode_base64_image(result["original_image"])
                     processed_mask = decode_base64_image(result["processed_mask"])
                     
                     # Affichage des résultats
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.image(image, caption="Image originale", use_column_width=True)
-                    with col2:
-                        st.image(processed_mask, caption="Masque prédit", use_column_width=True)
+                    st.image(original_image, caption="Image originale", use_column_width=True)
+                    st.image(processed_mask, caption="Masque prédit", use_column_width=True)
                 else:
-                    st.error("Erreur lors de l'analyse de l'image.")
+                    st.error(f"Erreur lors de l'analyse de l'image : {response.status_code}")
+
+
 
 # Menu de navigation
 menu = {
