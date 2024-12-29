@@ -1,15 +1,12 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi.responses import JSONResponse, FileResponse
 import os
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import register_keras_serializable
 from PIL import Image, ImageOps
-import matplotlib.pyplot as plt
-import tempfile
-import base64
+from io import BytesIO
+import uvicorn
 
 # Désactiver CUDA si non nécessaire
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -51,10 +48,10 @@ try:
 except Exception as e:
     print(f"Erreur lors du chargement du modèle : {e}")
     model = None
+
 # =========================================
 # Palette et labels
 # =========================================
-
 PALETTE = [
     (0, 0, 0),       # Black for "Flat"
     (128, 0, 0),     # Red for "Human"
@@ -81,140 +78,111 @@ CLASS_LABELS = [
 # Routes
 # =========================================
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=JSONResponse)
 async def home():
     """
-    Page d'accueil HTML intégrée.
+    Page d'accueil avec description des routes.
     """
-    return """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>S.O.P.H.I.A - Accueil</title>
-        <style>
-            body { font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; padding: 20px; }
-            h1 { color: #2c3e50; }
-            a { font-size: 1.2rem; color: #ffffff; text-decoration: none; background-color: #3498db; padding: 10px 20px; border-radius: 5px; }
-            a:hover { background-color: #2980b9; }
-        </style>
-    </head>
-    <body>
-        <h1>Bienvenue sur S.O.P.H.I.A</h1>
-        <p>Bienvenue dans notre application de segmentation d'images.</p>
-        <a href="/analyze">Analyser une image</a>
-    </body>
-    </html>
-    """
+    return {
+        "message": "Bienvenue sur SOPHIA API.",
+        "routes": {
+            "/list-images": "Lister les images disponibles.",
+            "/observe": "Visualiser une image et son masque annoté.",
+            "/predict": "Envoyer une image pour prédire un masque.",
+            "/visualize": "Combiner une image avec son masque prédictif."
+        }
+    }
 
-@app.get("/analyze", response_class=HTMLResponse)
-async def analyze():
+@app.get("/list-images", response_class=JSONResponse)
+async def list_images():
     """
-    Page HTML pour analyser une image.
+    Liste les images et masques disponibles par ville.
     """
-    return """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>S.O.P.H.I.A - Analyse</title>
-        <style>
-            body { font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; padding: 20px; }
-            h1 { color: #2c3e50; }
-            form { margin-top: 20px; }
-            input[type="file"] { margin: 20px 0; }
-            button { font-size: 1.2rem; color: #ffffff; background-color: #3498db; padding: 10px 20px; border: none; border-radius: 5px; }
-            button:hover { background-color: #2980b9; }
-        </style>
-    </head>
-    <body>
-        <h1>Analyse d'image</h1>
-        <form action="/predict" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept="image/*" required>
-            <button type="submit">Analyser</button>
-        </form>
-    </body>
-    </html>
-    """
+    base_image_dir = "api_image"
+    base_mask_dir = "api_mask"
 
-@app.post("/predict", response_class=HTMLResponse)
+    if not os.path.exists(base_image_dir) or not os.path.exists(base_mask_dir):
+        raise HTTPException(status_code=404, detail="Les dossiers api_image ou api_mask sont introuvables.")
+
+    cities = os.listdir(base_image_dir)
+    data = {}
+
+    for city in cities:
+        city_image_dir = os.path.join(base_image_dir, city)
+        if os.path.isdir(city_image_dir):
+            images = os.listdir(city_image_dir)
+            masks = [img.replace("leftImg8bit", "gtFine_labelIds") for img in images]
+            data[city] = {"images": images, "masks": masks}
+
+    return data
+
+@app.get("/observe")
+async def observe(city: str, image_name: str):
+    """
+    Visualiser une image et son masque annoté.
+    """
+    base_image_dir = "api_image"
+    base_mask_dir = "api_mask"
+
+    image_path = os.path.join(base_image_dir, city, image_name)
+    mask_path = os.path.join(base_mask_dir, city, image_name.replace("leftImg8bit", "gtFine_labelIds"))
+
+    if not os.path.exists(image_path) or not os.path.exists(mask_path):
+        raise HTTPException(status_code=404, detail="L'image ou le masque annoté est introuvable.")
+
+    return {
+        "image": image_path,
+        "mask": mask_path
+    }
+
+@app.post("/predict", response_class=JSONResponse)
 async def predict(file: UploadFile = File(...)):
     """
-    Traite l'image et retourne le résultat HTML avec une légende des classes.
+    Traite une image et génère un masque prédit.
     """
     try:
-        # Charger l'image
         img = Image.open(file.file).convert("RGB")
         img_resized = ImageOps.fit(img, (256, 256), Image.Resampling.LANCZOS)
         img_array = np.array(img_resized) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
-        # Prédiction
         prediction = model.predict(img_array)[0]
         predicted_mask = np.argmax(prediction, axis=-1)
 
-        # Sauvegarder l'image originale et le masque
-        temp_dir = tempfile.gettempdir()
-        original_image_path = os.path.join(temp_dir, "original_image.png")
-        predicted_mask_path = os.path.join(temp_dir, "predicted_mask.png")
+        combined_img = apply_palette(predicted_mask, PALETTE)
+        mask_io = encode_image_to_io(combined_img)
 
-        img.save(original_image_path)
-        mask_with_colors = apply_palette(predicted_mask, PALETTE)
-        Image.fromarray(mask_with_colors).save(predicted_mask_path)
-
-        # Encodage des images en Base64
-        original_image_base64 = encode_image_to_base64(original_image_path)
-        predicted_mask_base64 = encode_image_to_base64(predicted_mask_path)
-
-        # Générer la légende HTML
-        legend_html = "".join(
-            f"<div style='display:flex; align-items:center; margin-bottom:10px;'>"
-            f"<div style='width:20px; height:20px; background-color:rgb({color[0]},{color[1]},{color[2]}); margin-right:10px;'></div>"
-            f"<span>{label}</span></div>"
-            for label, color in zip(CLASS_LABELS, PALETTE)
-        )
-
-        # Retourner le HTML avec les résultats
-        return f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>S.O.P.H.I.A - Résultats</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; padding: 20px; }}
-                h1 {{ color: #2c3e50; }}
-                img {{ max-width: 100%; height: auto; margin: 10px 0; }}
-                a {{ font-size: 1rem; color: #ffffff; text-decoration: none; background-color: #3498db; padding: 10px 20px; border-radius: 5px; }}
-                a:hover {{ background-color: #2980b9; }}
-                .legend {{ margin-top: 20px; text-align: left; display: inline-block; }}
-            </style>
-        </head>
-        <body>
-            <h1>Résultats de l'analyse</h1>
-            <h2>Image originale :</h2>
-            <img src="data:image/png;base64,{original_image_base64}" alt="Image originale">
-            <h2>Masque prédit :</h2>
-            <img src="data:image/png;base64,{predicted_mask_base64}" alt="Masque prédit">
-            <div class="legend">
-                <h3>Légende :</h3>
-                {legend_html}
-            </div>
-            <a href="/">Retour à l'accueil</a>
-        </body>
-        </html>
-        """
+        return FileResponse(mask_io, media_type="image/jpeg")
     except Exception as e:
-        return f"<h1>Erreur : {str(e)}</h1>"
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction : {e}")
 
+@app.get("/visualize", response_class=FileResponse)
+async def visualize(city: str, image_name: str):
+    """
+    Combine une image réelle avec son masque prédictif.
+    """
+    base_image_dir = "api_image"
+    image_path = os.path.join(base_image_dir, city, image_name)
+
+    if not os.path.exists(image_path):
+        raise HTTPException(status_code=404, detail="L'image demandée est introuvable.")
+
+    img = Image.open(image_path).convert("RGB")
+    img_resized = ImageOps.fit(img, (256, 256), Image.Resampling.LANCZOS)
+    img_array = np.array(img_resized) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+
+    prediction = model.predict(img_array)[0]
+    predicted_mask = np.argmax(prediction, axis=-1)
+
+    combined_img = apply_palette(predicted_mask, PALETTE)
+    combined_image_io = encode_image_to_io(combined_img)
+
+    return FileResponse(combined_image_io, media_type="image/jpeg")
 
 # =========================================
 # Utilitaires
 # =========================================
-
 def apply_palette(mask, palette):
     """
     Applique une palette de couleurs à un masque d'indices de classes.
@@ -224,9 +192,12 @@ def apply_palette(mask, palette):
         color_mask[mask == class_id] = color
     return color_mask
 
-def encode_image_to_base64(image_path):
+def encode_image_to_io(image_array):
     """
-    Encode une image en Base64.
+    Encode une image en BytesIO pour envoi HTTP.
     """
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+    img = Image.fromarray(image_array.astype(np.uint8))
+    img_io = BytesIO()
+    img.save(img_io, format="JPEG")
+    img_io.seek(0)
+    return img_io
