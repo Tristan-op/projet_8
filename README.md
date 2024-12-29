@@ -58,3 +58,14 @@ L'API sera accessible localement sur : http://127.0.0.1:8000
    streamlit run app.py
 
 L'application sera accessible sur : http://localhost:8501
+
+### Déploiement
+
+- **API FastAPI** : Déployée sur une plateforme Cloud comme **Azure**, **Heroku**, ou **PythonAnywhere**.
+- **Application Streamlit** : Déployée sur **Streamlit Cloud**.
+
+Les fichiers de configuration et scripts nécessaires pour le déploiement sont disponibles dans leurs dossiers respectifs :
+
+- `api/` : Contient les fichiers pour l'API FastAPI.
+- `app/` : Contient les fichiers pour l'application Streamlit.
+
