@@ -21,24 +21,24 @@ jobs:
           python-version: '3.12'
 
       # Étape 3 : Créer un environnement virtuel et installer les dépendances
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-
       - name: Install dependencies
         run: |
+          cd api
+          python -m venv venv
+          source venv/bin/activate
           pip install -r requirements.txt
 
-      # Étape 4 (optionnel) : Ajouter une étape pour exécuter les tests (par exemple, avec Pytest)
+      # Étape 4 (optionnel) : Ajouter une étape pour exécuter les tests
       # - name: Run tests
       #   run: |
+      #     cd api
       #     source venv/bin/activate
       #     pytest
 
       # Étape 5 : Créer un fichier zip des fichiers nécessaires pour le déploiement
       - name: Zip artifact for deployment
         run: |
+          cd api
           zip -r release.zip . \
           -x "venv/*" "*.git*" "*.github*" "__pycache__/*"
 
@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: release.zip
+          path: api/release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -83,4 +83,3 @@ jobs:
         with:
           app-name: 'sophia'
           slot-name: 'Production'
-
