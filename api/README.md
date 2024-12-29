@@ -1,32 +1,57 @@
-# **SOPHIA API**
+# API SOPHIA
 
-## **Description**
-L'API **SOPHIA** (Segmentation d'Objets et Prédiction pour l'Habilitation d'Intelligence Artificielle) permet de prédire des masques segmentés à partir d'images.  
-Cette API est déployée pour faciliter l'utilisation du modèle de machine learning entraîné pour la segmentation d'images, notamment dans des applications telles que la conduite autonome.
+L'API SOPHIA (Segmentation d'Objets et Prédiction pour l'Habilitation d'Intelligence Artificielle) est une API basée sur **FastAPI**. Elle permet de prédire des masques segmentés pour des images, ainsi que de lister et observer des données d'images et de masques.
+
+## Fonctionnalités
+
+### 1. Liste des images disponibles
+- **Endpoint** : `/list-images`
+- **Description** : Retourne la liste des images et masques disponibles organisés par villes dans les dossiers `api_image` et `api_mask`.
+
+### 2. Observation des données
+- **Endpoint** : `/observe`
+- **Description** : Permet de visualiser une image et son masque annoté pour une ville et un nom d'image donnés.
+
+### 3. Prédiction de masque
+- **Endpoint** : `/predict`
+- **Description** : Envoie une image, et retourne un masque prédictif généré par le modèle de segmentation.
 
 ---
 
-## **Fonctionnalités**
+## Utilisation
 
-### **1. Liste des images disponibles**
-- Obtenez la liste des images et masques disponibles dans les dossiers `api_image` et `api_mask`.
+L'API déployée est disponible à l'adresse suivante : **[https://sophia.azure.net](https://sophia.azure.net)**
 
-### **2. Observation des données**
-- Visualisez une image et son masque annoté.
+### 1. Accueil
+- **Endpoint** : `/`
+- Retourne une description des routes disponibles et leurs fonctionnalités.
 
-### **3. Prédiction de masque**
-- Envoyez une image, et recevez un masque prédictif généré par le modèle.
+### 2. Lister les images
+- **Endpoint** : `/list-images`
+- **Méthode** : `GET`
+- Exemple de réponse :
+  ```json
+  {
+    "city1": {
+      "images": ["image1_leftImg8bit.png", "image2_leftImg8bit.png"],
+      "masks": ["image1_gtFine_labelIds.png", "image2_gtFine_labelIds.png"]
+    },
+    "city2": {
+      "images": ["image3_leftImg8bit.png"],
+      "masks": ["image3_gtFine_labelIds.png"]
+    }
+  }
+## Fonctionnalités
 
----
+### 3. Observer une image et son masque annoté
+- **Endpoint** : `/observe`
+- **Méthode** : `GET`
+- **Description** : Retourne une image et son masque annoté disponible dans les dossiers `api_image` et `api_mask`.
 
-## **Installation**
+#### Paramètres :
+- `city` : Ville dans laquelle se trouve l'image (exemple : `city1`).
+- `image_name` : Nom de l'image (exemple : `image1_leftImg8bit.png`).
 
-### **Prérequis**
-- **Python** : Version 3.12.
-- **Bibliothèques nécessaires** : Installées via `requirements.txt`.
-
-### **Étapes d'installation**
-1. **Cloner le dépôt :**
-   ```bash
-   git clone https://github.com/votre-repo/sophia-api.git
-   cd sophia-api
+#### Exemple de requête :
+```arduino
+GET https://sophia.azure.net/observe?city=city1&image_name=image1_leftImg8bit.png
