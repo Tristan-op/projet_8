@@ -170,7 +170,7 @@ async def explore():
 @app.get("/upload", response_class=HTMLResponse)
 async def upload_page():
     """
-    Page HTML pour uploader une photo à analyser.
+    Page HTML pour uploader une photo à analyser avec prévisualisation.
     """
     return """
     <!DOCTYPE html>
@@ -185,17 +185,31 @@ async def upload_page():
             input[type="file"] { font-size: 1.2rem; margin: 20px 0; }
             button { font-size: 1.2rem; color: #ffffff; background-color: #3498db; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
             button:hover { background-color: #2980b9; }
+            img { max-width: 80%; margin-top: 20px; display: none; border: 1px solid #ccc; }
         </style>
+        <script>
+            function previewImage(event) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const img = document.getElementById("preview");
+                    img.src = reader.result;
+                    img.style.display = "block";
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        </script>
     </head>
     <body>
         <h1>Analyser une photo</h1>
-        <form action="/predict" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept="image/*" required>
+        <form action="/analyze" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" onchange="previewImage(event)" required>
+            <img id="preview" alt="Aperçu de l'image">
             <button type="submit">Analyser</button>
         </form>
     </body>
     </html>
     """
+
 
 
 @app.get("/list-images", response_class=JSONResponse)
@@ -396,6 +410,73 @@ async def predict(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction : {str(e)}")
+
+@app.post("/analyze", response_class=HTMLResponse)
+async def analyze_image(file: UploadFile = File(...)):
+    """
+    Traite une image uploadée, retourne l'image originale et le masque généré.
+    """
+    try:
+        # Charger l'image uploadée
+        img = Image.open(file.file).convert("RGB")
+
+        # Préparer l'image pour la prédiction
+        img_resized = ImageOps.fit(img, (256, 256), Image.Resampling.LANCZOS)
+        img_array = np.array(img_resized) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # Prédiction
+        prediction = model.predict(img_array)[0]
+        predicted_mask = np.argmax(prediction, axis=-1)
+
+        # Générer le masque traité coloré
+        predicted_mask_colored = Image.fromarray(apply_palette(predicted_mask, PALETTE))
+
+        # Encodage des images en base64
+        original_image_base64 = encode_image_to_base64(img)
+        processed_mask_base64 = encode_image_to_base64(predicted_mask_colored)
+
+        # Retourner une page HTML avec les images
+        return f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Résultat de l'analyse</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 20px; }}
+                img {{ max-width: 80%; margin: 10px; border: 1px solid #ccc; }}
+                .legend {{ text-align: left; margin: 20px auto; display: inline-block; }}
+                .legend-item {{ display: flex; align-items: center; margin-bottom: 10px; }}
+                .legend-color {{ width: 20px; height: 20px; margin-right: 10px; }}
+            </style>
+        </head>
+        <body>
+            <h1>Résultat de l'analyse</h1>
+            <div>
+                <h3>Image originale</h3>
+                <img src="data:image/jpeg;base64,{original_image_base64}" alt="Image originale">
+            </div>
+            <div>
+                <h3>Masque prédit</h3>
+                <img src="data:image/jpeg;base64,{processed_mask_base64}" alt="Masque prédit">
+            </div>
+            <div>
+                <h3>Légende</h3>
+                <div class="legend">
+                    {"".join(
+                        f'<div class="legend-item"><div class="legend-color" style="background-color:rgb({color[0]},{color[1]},{color[2]})"></div>{label}</div>'
+                        for label, color in zip(CLASS_LABELS, PALETTE)
+                    )}
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse : {str(e)}")
+        
 
 
 # =========================================
