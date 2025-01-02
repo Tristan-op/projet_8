@@ -95,17 +95,19 @@ async def home():
         <style>
             body { font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; padding: 20px; }
             h1 { color: #2c3e50; }
-            a { font-size: 1.2rem; color: #ffffff; text-decoration: none; background-color: #3498db; padding: 10px 20px; border-radius: 5px; }
-            a:hover { background-color: #2980b9; }
+            a, button { font-size: 1.2rem; color: #ffffff; text-decoration: none; background-color: #3498db; padding: 10px 20px; border-radius: 5px; margin: 10px; }
+            a:hover, button:hover { background-color: #2980b9; }
         </style>
     </head>
     <body>
         <h1>Bienvenue sur S.O.P.H.I.A</h1>
         <p>Bienvenue dans notre application de segmentation d'images.</p>
         <a href="/explore">Lister les images disponibles</a>
+        <a href="/upload">Analyser une photo</a>
     </body>
     </html>
     """
+
 
 @app.get("/explore", response_class=HTMLResponse)
 async def explore():
@@ -164,6 +166,37 @@ async def explore():
     </body>
     </html>
     """
+
+@app.get("/upload", response_class=HTMLResponse)
+async def upload_page():
+    """
+    Page HTML pour uploader une photo à analyser.
+    """
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Uploader une photo</title>
+        <style>
+            body { font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; padding: 20px; }
+            form { margin: 20px auto; }
+            input[type="file"] { font-size: 1.2rem; margin: 20px 0; }
+            button { font-size: 1.2rem; color: #ffffff; background-color: #3498db; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+            button:hover { background-color: #2980b9; }
+        </style>
+    </head>
+    <body>
+        <h1>Analyser une photo</h1>
+        <form action="/predict" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Analyser</button>
+        </form>
+    </body>
+    </html>
+    """
+
 
 @app.get("/list-images", response_class=JSONResponse)
 async def list_images():
